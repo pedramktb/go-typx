@@ -3,7 +3,7 @@ module github.com/pedramktb/go-typx
 go 1.24.4
 
 require (
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.mongodb.org/mongo-driver v1.17.4
 )
 
