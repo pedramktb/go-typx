@@ -276,7 +276,7 @@ type dynField struct {
 	Field typx.Dyn `json:"field"`
 }
 
-func Test_Dyn_JSON_Marhshal(t *testing.T) {
+func Test_Dyn_JSON_Marshal(t *testing.T) {
 	randomID := uuid.New()
 
 	tests := []struct {
@@ -346,7 +346,7 @@ func Test_Dyn_JSON_Marhshal(t *testing.T) {
 	}
 }
 
-func Test_Dyn_JSON_Unmarhshal(t *testing.T) {
+func Test_Dyn_JSON_UnMarshal(t *testing.T) {
 	randomID := uuid.New()
 	tests := []struct {
 		name  string
@@ -395,7 +395,7 @@ func Test_Dyn_JSON_Unmarhshal(t *testing.T) {
 	}
 }
 
-func Test_Dyn_JSON_Unmarhshal_InStruct(t *testing.T) {
+func Test_Dyn_JSON_UnMarshal_InStruct(t *testing.T) {
 	tests := []struct {
 		name  string
 		value []byte
@@ -438,7 +438,7 @@ func Test_Dyn_JSON_Unmarhshal_InStruct(t *testing.T) {
 	}
 }
 
-func Test_Dyn_BSON_Marhshal(t *testing.T) {
+func Test_Dyn_BSON_Marshal(t *testing.T) {
 	randomID := uuid.New()
 	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
 	tests := []struct {
@@ -483,7 +483,7 @@ func Test_Dyn_BSON_Marhshal(t *testing.T) {
 	}
 }
 
-func Test_Dyn_BSON_Unmarhshal(t *testing.T) {
+func Test_Dyn_BSON_UnMarshal(t *testing.T) {
 	randomID := uuid.New()
 	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
 

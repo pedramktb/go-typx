@@ -267,7 +267,7 @@ type field struct {
 	Field typx.Nil[string] `json:"field"`
 }
 
-func Test_Nil_JSON_Marhshal(t *testing.T) {
+func Test_Nil_JSON_Marshal(t *testing.T) {
 	randomID := uuid.New()
 
 	tests := []struct {
@@ -315,7 +315,7 @@ func Test_Nil_JSON_Marhshal(t *testing.T) {
 	}
 }
 
-func Test_Nil_JSON_Unmarhshal(t *testing.T) {
+func Test_Nil_JSON_UnMarshal(t *testing.T) {
 	randomID := uuid.New()
 	tests := []struct {
 		name  string
@@ -384,7 +384,7 @@ func Test_Nil_JSON_Unmarhshal(t *testing.T) {
 	}
 }
 
-func Test_Nil_BSON_Marhshal(t *testing.T) {
+func Test_Nil_BSON_Marshal(t *testing.T) {
 	randomID := uuid.New()
 	randomBSON, _ := bson.Marshal(struct{ ID uuid.UUID }{ID: randomID})
 	tests := []struct {
@@ -418,7 +418,7 @@ func Test_Nil_BSON_Marhshal(t *testing.T) {
 	}
 }
 
-func Test_Nil_BSON_Unmarhshal(t *testing.T) {
+func Test_Nil_BSON_UnMarshal(t *testing.T) {
 	randomID := uuid.New()
 	randomBSON, _ := bson.Marshal(struct{ ID uuid.UUID }{ID: randomID})
 	tests := []struct {
