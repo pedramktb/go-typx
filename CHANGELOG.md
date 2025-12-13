@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- New `Dyn` type for dynamic/any values with full JSON, SQL, and BSON encoding support
+- Comprehensive test suite for `Dyn` type covering all marshaling/unmarshaling interfaces
+- Function documentation comments for all exported functions and methods
+
+### Changed
+- Improved error messages in `Nil` type with clearer expectations for encoding operations
+- Refactored `Nil.Scan()` method to use switch statement for better readability
+- Updated documentation for `Nil` and `Opt` types with cross-references
+- Simplified inline error handling in unmarshal methods for better code consistency
+
 ## [v1.0.0] - 2025-06-28
 
 ### Added

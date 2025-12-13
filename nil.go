@@ -13,13 +13,16 @@ import (
 
 // Nil is a type that can be used to represent a nil/nullable value.
 // It implements most of the interfaces that are used to marshal and unmarshal values.
+// For optional values that are not present, use Opt[T] instead.
 type Nil[T any] struct {
 	Val    T
 	NotNil bool
 }
 
+// NilFrom creates a Nil[T] from a non-nil value.
 func NilFrom[T any](value T) Nil[T] { return Nil[T]{Val: value, NotNil: true} }
 
+// NilFromPtr creates a Nil[T] from a pointer. If the pointer is nil, NotNil is false.
 func NilFromPtr[T any](value *T) Nil[T] {
 	if value == nil {
 		return Nil[T]{}
@@ -27,6 +30,8 @@ func NilFromPtr[T any](value *T) Nil[T] {
 	return Nil[T]{Val: *value, NotNil: true}
 }
 
+// Ptr returns a pointer to the value if NotNil is true, otherwise nil.
+// It uses a non-pointer receiver so that the modified pointer does not affect the original value.
 func (n Nil[T]) Ptr() *T {
 	if !n.NotNil {
 		return nil
@@ -34,6 +39,7 @@ func (n Nil[T]) Ptr() *T {
 	return &n.Val
 }
 
+// Scan implements the sql.Scanner interface.
 func (n *Nil[T]) Scan(src any) error {
 	n.NotNil = false
 	if src == nil {
@@ -48,19 +54,20 @@ func (n *Nil[T]) Scan(src any) error {
 		n.NotNil = true
 		return nil
 	}
-	var ok bool
-	if n.Val, ok = src.(T); ok {
+	switch v := src.(type) {
+	case T:
+		n.Val = v
 		n.NotNil = true
 		return nil
-	}
-	if b, ok := src.([]byte); ok {
-		if n.Val, ok = any(string(b)).(T); ok {
+	case []byte:
+		if val, ok := any(string(v)).(T); ok {
+			n.Val = val
 			n.NotNil = true
 			return nil
 		}
-	}
-	if s, ok := src.(string); ok {
-		if n.Val, ok = any([]byte(s)).(T); ok {
+	case string:
+		if val, ok := any([]byte(v)).(T); ok {
+			n.Val = val
 			n.NotNil = true
 			return nil
 		}
@@ -68,6 +75,7 @@ func (n *Nil[T]) Scan(src any) error {
 	return fmt.Errorf("cannot scan %v into Nil[%T]", src, n.Val)
 }
 
+// Value implements the driver.Valuer interface.
 func (n Nil[T]) Value() (driver.Value, error) {
 	if !n.NotNil {
 		return nil, nil
@@ -78,6 +86,7 @@ func (n Nil[T]) Value() (driver.Value, error) {
 	return n.Val, nil
 }
 
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (n Nil[T]) MarshalBinary() ([]byte, error) {
 	if !n.NotNil {
 		return []byte(nil), nil
@@ -90,9 +99,10 @@ func (n Nil[T]) MarshalBinary() ([]byte, error) {
 	case string:
 		return []byte(v), nil
 	}
-	return nil, fmt.Errorf("cannot marshal %T into binary", n.Val)
+	return nil, fmt.Errorf("cannot marshal %T into binary: expected encoding.BinaryMarshaler, string, or []byte", n.Val)
 }
 
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 	n.NotNil = false
 	if data == nil {
@@ -100,8 +110,7 @@ func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 		return nil
 	}
 	if unmarshaler, ok := any(n.Val).(encoding.BinaryUnmarshaler); ok {
-		err := unmarshaler.UnmarshalBinary(data)
-		if err != nil {
+		if err := unmarshaler.UnmarshalBinary(data); err != nil {
 			return err
 		}
 		n.NotNil = true
@@ -120,9 +129,10 @@ func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 		n.NotNil = true
 		return nil
 	}
-	return fmt.Errorf("cannot unmarshal binary into %T", n.Val)
+	return fmt.Errorf("cannot unmarshal binary into %T: expected encoding.BinaryUnmarshaler, string, or []byte", n.Val)
 }
 
+// MarshalText implements the encoding.TextMarshaler interface.
 func (n Nil[T]) MarshalText() ([]byte, error) {
 	if !n.NotNil {
 		return []byte("null"), nil
@@ -135,9 +145,10 @@ func (n Nil[T]) MarshalText() ([]byte, error) {
 	case string:
 		return []byte(v), nil
 	}
-	return nil, fmt.Errorf("cannot marshal %T as text", n.Val)
+	return nil, fmt.Errorf("cannot marshal %T as text: expected encoding.TextMarshaler, string, or []byte", n.Val)
 }
 
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
 func (n *Nil[T]) UnmarshalText(data []byte) error {
 	n.NotNil = false
 	if data == nil {
@@ -145,8 +156,7 @@ func (n *Nil[T]) UnmarshalText(data []byte) error {
 		return nil
 	}
 	if unmarshaler, ok := any(n.Val).(encoding.TextUnmarshaler); ok {
-		err := unmarshaler.UnmarshalText(data)
-		if err != nil {
+		if err := unmarshaler.UnmarshalText(data); err != nil {
 			return err
 		}
 		n.NotNil = true
@@ -165,9 +175,10 @@ func (n *Nil[T]) UnmarshalText(data []byte) error {
 		n.NotNil = true
 		return nil
 	}
-	return fmt.Errorf("cannot unmarshal text as %T", n.Val)
+	return fmt.Errorf("cannot unmarshal text as %T: expected encoding.TextUnmarshaler, string, or []byte", n.Val)
 }
 
+// MarshalJSON implements the json.Marshaler interface.
 func (n Nil[T]) MarshalJSON() ([]byte, error) {
 	if !n.NotNil {
 		return []byte("null"), nil
@@ -175,11 +186,11 @@ func (n Nil[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n.Val)
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (n *Nil[T]) UnmarshalJSON(data []byte) error {
 	n.NotNil = false
 	var t *T
-	err := json.Unmarshal(data, &t)
-	if err != nil {
+	if err := json.Unmarshal(data, &t); err != nil {
 		return err
 	}
 	if t != nil {
@@ -191,22 +202,22 @@ func (n *Nil[T]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalBSONValue implements the bson.ValueMarshaler interface.
 func (n Nil[T]) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	if !n.NotNil {
-		var t *T
-		return bson.MarshalValue(t)
+		return bson.MarshalValue(new(T))
 	}
 	return bson.MarshalValue(n.Val)
 }
 
+// UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
 func (n *Nil[T]) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	n.NotNil = false
 	if t == bson.TypeNull {
 		n.Val = *new(T)
 		return nil
 	}
-	err := bson.UnmarshalValue(t, data, &n.Val)
-	if err != nil {
+	if err := bson.UnmarshalValue(t, data, &n.Val); err != nil {
 		return err
 	}
 	n.NotNil = true
