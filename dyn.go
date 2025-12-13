@@ -91,7 +91,7 @@ func convertBSONToNative(v any) any {
 // but they require that the underlying type implements the respective interfaces.
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (d *Dyn) MarshalBinary() ([]byte, error) {
+func (d Dyn) MarshalBinary() ([]byte, error) {
 	if marshaler, ok := d.Val.(encoding.BinaryMarshaler); ok {
 		return marshaler.MarshalBinary()
 	}
@@ -107,7 +107,7 @@ func (d *Dyn) UnmarshalBinary(data []byte) error {
 }
 
 // MarshalText implements the encoding.TextMarshaler interface.
-func (d *Dyn) MarshalText() ([]byte, error) {
+func (d Dyn) MarshalText() ([]byte, error) {
 	if marshaler, ok := d.Val.(encoding.TextMarshaler); ok {
 		return marshaler.MarshalText()
 	}
