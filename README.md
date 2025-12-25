@@ -15,6 +15,7 @@ type User struct {
     Name string
     Mobile string
     Landline typx.Nil[string] // Instead of *string
+    AdditionalInfo typx.Dyn // For storing arbitrary JSON data
 }
 
 // A sample DTO for PATCH /api/v1/user/{id}
@@ -22,5 +23,6 @@ type UpdateUserDTO struct {
     Name typx.Opt[string]
     Mobile typx.Opt[string]
     Landline typx.Opt[typx.Nil[string]]
+    AdditionalInfo typx.Opt[typx.Dyn]
 }
 ```

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [v1.1.0] - 2025-12-25
 
 ### Added
 - New `Dyn` type for dynamic/any values with full JSON, SQL, and BSON encoding support
