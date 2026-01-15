@@ -14,3 +14,12 @@ func FromPtr[T any](pointer *T) (T, bool) {
 	}
 	return *pointer, true
 }
+
+// FromPtrOrZero safely dereferences the given pointer and returns its value.
+// If the pointer is nil, it returns the zero value of T.
+func FromPtrOrZero[T any](pointer *T) T {
+	if pointer == nil {
+		return *new(T)
+	}
+	return *pointer
+}
