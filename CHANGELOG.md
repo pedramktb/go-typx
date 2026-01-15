@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v1.2.0] - 2026-01-15
+
+### Added
+- New `FromPtrOrZero` function for safe pointer dereferencing with zero value fallback
+
 ## [v1.1.0] - 2025-12-25
 
 ### Added
