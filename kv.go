@@ -10,6 +10,7 @@ func KVFrom[K comparable, V any](key K, val V) KV[K, V] {
 	return KV[K, V]{Key: key, Val: val}
 }
 
+// KVs is a slice of KV pairs that provides utility methods for working with key-value collections.
 type KVs[K comparable, V any] []KV[K, V]
 
 func KVsFrom[K comparable, V any](kvs ...KV[K, V]) KVs[K, V] {
