@@ -28,7 +28,7 @@ type UpdateUserDTO struct {
 }
 
 // KV example
-func NewDatabaseConnection(config typx.KV[string, string]) (*sql.DB, error) {
+func NewDatabaseConnection(config ...typx.KV[string, string]) (*sql.DB, error) {
     // ...
     for _, kv := range config {
         cfg.Set(kv.Key, kv.Value)
