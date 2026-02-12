@@ -13,6 +13,7 @@ func KVFrom[K comparable, V any](key K, val V) KV[K, V] {
 // KVs is a slice of KV pairs that provides utility methods for working with key-value collections.
 type KVs[K comparable, V any] []KV[K, V]
 
+// KVsFrom creates a KVs slice from the given KV pairs.
 func KVsFrom[K comparable, V any](kvs ...KV[K, V]) KVs[K, V] {
 	return kvs
 }
