@@ -5,6 +5,7 @@ type KV[K comparable, V any] struct {
 	Val V
 }
 
+// KVFrom creates a KV pair from the given key and value.
 func KVFrom[K comparable, V any](key K, val V) KV[K, V] {
 	return KV[K, V]{Key: key, Val: val}
 }
