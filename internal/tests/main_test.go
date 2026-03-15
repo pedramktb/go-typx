@@ -66,6 +66,12 @@ func TestMain(m *testing.M) {
 	if err := mongoClient.Disconnect(ctx); err != nil {
 		panic(err)
 	}
+	if err := postgresC.Terminate(ctx); err != nil {
+		panic(err)
+	}
+	if err := mongoC.Terminate(ctx); err != nil {
+		panic(err)
+	}
 	os.Exit(code)
 }
 
