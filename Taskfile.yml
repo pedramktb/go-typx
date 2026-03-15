@@ -1,8 +1,8 @@
-version: '3'
+version: "3"
 
 tasks:
   default:
-   cmds:
+    cmds:
       - task --list
 
   deps:
@@ -17,6 +17,12 @@ tasks:
       - golangci-lint run
 
   test:
-    desc: Run tests
+    desc: Run tests and integration tests
     cmds:
       - go test ./...
+      - cd internal/tests && go test ./...
+
+  build:
+    desc: Build the project
+    cmds:
+      - go build ./...
