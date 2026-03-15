@@ -1,6 +1,6 @@
-# typx
+# <img src="./typx.svg" alt="typX" />
 
-typx is a Go package that provides useful types, helpers and utilities. It currently includes the following:
+typX is a Go package that provides useful types, helpers and utilities. It currently includes the following:
 
 - **Nil** - Represents a nullable value. Implements SQL, JSON, and BSON encoding. Use instead of `*T` for nullable fields.
 - **Opt** - Represents an optional (present vs. absent) value. Implements JSON (`omitzero`) and BSON (`omitempty`) encoding. Use for optional fields in API payloads.
