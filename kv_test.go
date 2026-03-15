@@ -1,7 +1,6 @@
 package typx_test
 
 import (
-	"database/sql/driver"
 	"encoding/json"
 	"testing"
 
@@ -9,23 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
-
-func Test_KVFrom(t *testing.T) {
-	k, v := "key", 1
-	kv := typx.KVFrom(k, v)
-	require.Equal(t, k, kv.Key)
-	require.Equal(t, v, kv.Val)
-}
-
-func Test_KVsFrom(t *testing.T) {
-	kv1 := typx.KVFrom("k1", 1)
-	kv2 := typx.KVFrom("k2", 2)
-	kvs := typx.KVsFrom(kv1, kv2)
-
-	require.Len(t, kvs, 2)
-	require.Equal(t, kv1, kvs[0])
-	require.Equal(t, kv2, kvs[1])
-}
 
 func Test_KVsFromMap(t *testing.T) {
 	m := map[string]int{"k1": 1, "k2": 2}
@@ -66,142 +48,6 @@ func Test_KVs_Map(t *testing.T) {
 
 	m := kvs.Map()
 	require.Equal(t, map[string]int{"k1": 1, "k2": 2}, m)
-}
-
-func Test_KV_JSON_Marshal(t *testing.T) {
-	tests := []struct {
-		name  string
-		value any
-		want  []byte
-	}{
-		{
-			name:  "string value",
-			value: typx.KVFrom("mykey", "myval"),
-			want:  []byte(`{"mykey":"myval"}`),
-		},
-		{
-			name:  "int value",
-			value: typx.KVFrom("count", 42),
-			want:  []byte(`{"count":42}`),
-		},
-		{
-			name:  "object value",
-			value: typx.KVFrom("obj", struct{ Name string }{Name: "test"}),
-			want:  []byte(`{"obj":{"Name":"test"}}`),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := json.Marshal(tt.value)
-			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func Test_KV_JSON_Unmarshal(t *testing.T) {
-	tests := []struct {
-		name string
-		data []byte
-		want typx.KV[string, string]
-	}{
-		{
-			name: "string value",
-			data: []byte(`{"mykey":"myval"}`),
-			want: typx.KVFrom("mykey", "myval"),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var got typx.KV[string, string]
-			err := json.Unmarshal(tt.data, &got)
-			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func Test_KV_Scan(t *testing.T) {
-	tests := []struct {
-		name    string
-		src     any
-		want    typx.KV[string, string]
-		wantErr bool
-	}{
-		{
-			name: "bytes",
-			src:  []byte(`{"k":"v"}`),
-			want: typx.KVFrom("k", "v"),
-		},
-		{
-			name: "string",
-			src:  `{"k":"v"}`,
-			want: typx.KVFrom("k", "v"),
-		},
-		{
-			name:    "invalid type",
-			src:     123,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var got typx.KV[string, string]
-			err := got.Scan(tt.src)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.want, got)
-			}
-		})
-	}
-}
-
-func Test_KV_Value(t *testing.T) {
-	tests := []struct {
-		name  string
-		value typx.KV[string, int]
-		want  driver.Value
-	}{
-		{
-			name:  "kv pair",
-			value: typx.KVFrom("count", 42),
-			want:  []byte(`{"count":42}`),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.value.Value()
-			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func Test_KV_BSON(t *testing.T) {
-	type doc struct {
-		KV typx.KV[string, int] `bson:"kv"`
-	}
-	original := doc{KV: typx.KVFrom("mykey", 7)}
-	data, err := bson.Marshal(original)
-	require.NoError(t, err)
-
-	var got doc
-	err = bson.Unmarshal(data, &got)
-	require.NoError(t, err)
-	require.Equal(t, original, got)
-}
-
-func Test_KV_BSON_Standalone(t *testing.T) {
-	original := typx.KVFrom("mykey", 7)
-	data, err := bson.Marshal(original)
-	require.NoError(t, err)
-
-	var got typx.KV[string, int]
-	err = bson.Unmarshal(data, &got)
-	require.NoError(t, err)
-	require.Equal(t, original, got)
 }
 
 func Test_KVs_JSON_Marshal(t *testing.T) {

@@ -3,7 +3,7 @@ package typx
 import "encoding/base64"
 
 /*
-Str64 is a [Str64 []byte] type that encodes arbitrary byte slices as unpadded base64url strings
+Str64 is a named []byte type that encodes arbitrary byte slices as unpadded base64url strings
 (alphabet: A-Z, a-z, 0-9, -, _) via [base64.RawURLEncoding]. Because it implements
 [encoding.TextMarshaler] / [encoding.TextUnmarshaler], it serialises automatically in
 JSON, and any other text-based transport or storage without extra conversion,
@@ -16,9 +16,10 @@ Typical use cases:
     as Str64 it is 22 characters — a 39 % reduction — while still being URL-safe.
 
     uid := uuid.New()
-    s := typx.Str64(uid[:])   // wrap bytes directly, no copy
-    fmt.Println(s)            // e.g. "BpLnfgDsc2WD8F2q"
-    uid2, _ := uuid.FromBytes(s) // recover
+    s := typx.Str64(uid[:])         // wrap bytes directly, no copy
+    fmt.Println(s)                  // e.g. "BpLnfgDsc2WD8F2qNkHydQ"
+    s2, _ := typx.FromString(s.String())
+    uid2, _ := uuid.FromBytes(s2)   // recover
 
  2. Custom Variable-length identifiers.
     When a UUID's 128 bits of entropy is more (or less) than needed, Str64 works

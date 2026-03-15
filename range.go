@@ -17,6 +17,9 @@ type Bound[O cmp.Ordered] struct {
 	Unbounded bool `json:"unbounded,omitempty" bson:"unbounded,omitempty"` // whether this is an infinite/unbounded bound (true) or a finite bound (false)
 }
 
+// Range supports any cmp.Ordered type for in-process use, JSON, and BSON storage.
+// The Scan and Value methods implement PostgreSQL range literals; note that string-based
+// types have no corresponding PostgreSQL range type and should not be used with SQL.
 type Range[O cmp.Ordered] struct {
 	Lower Bound[O] `json:"lower" bson:"lower"` // lower bound
 	Upper Bound[O] `json:"upper" bson:"upper"` // upper bound

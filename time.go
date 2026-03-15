@@ -57,12 +57,18 @@ func (t DateTime) Value() (driver.Value, error) {
 // Scan implements [sql.Scanner].
 // The driver is expected to deliver a [time.Time] value (which pgx and database/sql
 // do for DATE, TIMESTAMP, and TIMESTAMPTZ columns alike).
+// A nil value (SQL NULL) zeroes the receiver.
+// Use Nil[DateTime] for a type that can be nil instead of zero.
 func (t *DateTime) Scan(value any) error {
 	switch v := value.(type) {
+	case nil:
+		t.Time = time.Time{}
 	case time.Time:
 		t.Time = v.Round(0)
 	case *time.Time:
-		if v != nil {
+		if v == nil {
+			t.Time = time.Time{}
+		} else {
 			t.Time = v.Round(0)
 		}
 	default:

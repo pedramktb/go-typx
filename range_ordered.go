@@ -99,12 +99,15 @@ func (r *OrderedRange[O]) scanRangeLiteral(str string) error {
 }
 
 // Value implements the driver.Valuer interface for OrderedRange.
-// If O implements PGBoundMarshaler it returns a PostgreSQL range literal (e.g. [min,max)).
+// If O or *O implements PGBoundMarshaler it returns a PostgreSQL range literal (e.g. [min,max)).
 // Otherwise it JSON-encodes the range for storage in a text/jsonb column.
 func (r OrderedRange[O]) Value() (driver.Value, error) {
 	var zero O
 	if _, ok := any(zero).(PGBoundMarshaler); ok {
 		return r.valueRangeLiteral()
+	}
+	if _, ok := any(&zero).(PGBoundMarshaler); ok {
+		return r.valueRangeLiteralPtr()
 	}
 	b, err := json.Marshal(r)
 	if err != nil {
@@ -140,6 +143,42 @@ func (r OrderedRange[O]) valueRangeLiteral() (driver.Value, error) {
 			hi = "]"
 		}
 		b, err := any(r.Upper.Val).(PGBoundMarshaler).MarshalPGBound()
+		if err != nil {
+			return nil, fmt.Errorf("typx.OrderedRange.Value: marshaling upper bound: %w", err)
+		}
+		upperStr = string(b)
+	}
+	return fmt.Sprintf("%s%s,%s%s", lo, lowerStr, upperStr, hi), nil
+}
+
+// valueRangeLiteralPtr is like valueRangeLiteral but calls MarshalPGBound via a pointer receiver.
+func (r OrderedRange[O]) valueRangeLiteralPtr() (driver.Value, error) {
+	var lo, hi, lowerStr, upperStr string
+	if r.Lower.Unbounded {
+		lo = "("
+		lowerStr = ""
+	} else {
+		if r.Lower.Exclusive {
+			lo = "("
+		} else {
+			lo = "["
+		}
+		b, err := any(&r.Lower.Val).(PGBoundMarshaler).MarshalPGBound()
+		if err != nil {
+			return nil, fmt.Errorf("typx.OrderedRange.Value: marshaling lower bound: %w", err)
+		}
+		lowerStr = string(b)
+	}
+	if r.Upper.Unbounded {
+		hi = ")"
+		upperStr = ""
+	} else {
+		if r.Upper.Exclusive {
+			hi = ")"
+		} else {
+			hi = "]"
+		}
+		b, err := any(&r.Upper.Val).(PGBoundMarshaler).MarshalPGBound()
 		if err != nil {
 			return nil, fmt.Errorf("typx.OrderedRange.Value: marshaling upper bound: %w", err)
 		}
@@ -290,12 +329,15 @@ func (mr *OrderedMultiRange[O]) scanMultiRangeLiteral(str string) error {
 }
 
 // Value implements the driver.Valuer interface for OrderedMultiRange.
-// If O implements PGBoundMarshaler it returns a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
+// If O or *O implements PGBoundMarshaler it returns a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
 // Otherwise it JSON-encodes the multirange as a JSON array for storage in a text/jsonb column.
 func (mr OrderedMultiRange[O]) Value() (driver.Value, error) {
 	var zero O
 	if _, ok := any(zero).(PGBoundMarshaler); ok {
 		return mr.valueMultiRangeLiteral()
+	}
+	if _, ok := any(&zero).(PGBoundMarshaler); ok {
+		return mr.valueMultiRangeLiteralPtr()
 	}
 	b, err := json.Marshal([]OrderedRange[O](mr))
 	if err != nil {
@@ -308,6 +350,18 @@ func (mr OrderedMultiRange[O]) valueMultiRangeLiteral() (driver.Value, error) {
 	parts := make([]string, 0, len(mr))
 	for _, r := range mr {
 		v, err := r.valueRangeLiteral()
+		if err != nil {
+			return nil, err
+		}
+		parts = append(parts, v.(string))
+	}
+	return "{" + strings.Join(parts, ",") + "}", nil
+}
+
+func (mr OrderedMultiRange[O]) valueMultiRangeLiteralPtr() (driver.Value, error) {
+	parts := make([]string, 0, len(mr))
+	for _, r := range mr {
+		v, err := r.valueRangeLiteralPtr()
 		if err != nil {
 			return nil, err
 		}
