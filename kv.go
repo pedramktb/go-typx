@@ -1,5 +1,13 @@
 package typx
 
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
+
 // KV represents a key-value pair with a comparable key and any value.
 type KV[K comparable, V any] struct {
 	Key K
@@ -23,7 +31,7 @@ func KVsFrom[K comparable, V any](kvs ...KV[K, V]) KVs[K, V] {
 func KVsFromMap[K comparable, V any](m map[K]V) KVs[K, V] {
 	kvs := make(KVs[K, V], 0, len(m))
 	for k, v := range m {
-		kvs = append(kvs, KVFrom(k, v))
+		kvs = append(kvs, KV[K, V]{Key: k, Val: v})
 	}
 	return kvs
 }
@@ -53,4 +61,94 @@ func (kvs KVs[K, V]) Map() map[K]V {
 		m[kv.Key] = kv.Val
 	}
 	return m
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// KVs is serialized as a single JSON object: {"k1": v1, "k2": v2, ...}.
+func (kvs KVs[K, V]) MarshalJSON() ([]byte, error) {
+	m := make(map[K]V, len(kvs))
+	for _, kv := range kvs {
+		m[kv.Key] = kv.Val
+	}
+	return json.Marshal(m)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (kvs *KVs[K, V]) UnmarshalJSON(data []byte) error {
+	var m map[K]V
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	*kvs = make(KVs[K, V], 0, len(m))
+	for k, v := range m {
+		*kvs = append(*kvs, KV[K, V]{Key: k, Val: v})
+	}
+	return nil
+}
+
+// Scan implements the sql.Scanner interface.
+// The column should be a type that can hold JSON data (JSONB, JSON, TEXT, etc).
+func (kvs *KVs[K, V]) Scan(src any) error {
+	if src == nil {
+		*kvs = nil
+		return nil
+	}
+	switch v := src.(type) {
+	case []byte:
+		return json.Unmarshal(v, kvs)
+	case string:
+		return json.Unmarshal([]byte(v), kvs)
+	}
+	return fmt.Errorf("typx.KVs.Scan: %T is not a string or []byte", src)
+}
+
+// Value implements the driver.Valuer interface.
+func (kvs KVs[K, V]) Value() (driver.Value, error) {
+	return json.Marshal(kvs)
+}
+
+// MarshalBSONValue implements the bson.ValueMarshaler interface.
+// KVs is serialized as a single BSON document: {k1: v1, k2: v2, ...}.
+func (kvs KVs[K, V]) MarshalBSONValue() (byte, []byte, error) {
+	m := make(map[K]V, len(kvs))
+	for _, kv := range kvs {
+		m[kv.Key] = kv.Val
+	}
+	t, data, err := bson.MarshalValue(m)
+	return byte(t), data, err
+}
+
+// UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
+func (kvs *KVs[K, V]) UnmarshalBSONValue(t byte, data []byte) error {
+	var m map[K]V
+	if err := bson.UnmarshalValue(bson.Type(t), data, &m); err != nil {
+		return err
+	}
+	*kvs = make(KVs[K, V], 0, len(m))
+	for k, v := range m {
+		*kvs = append(*kvs, KV[K, V]{Key: k, Val: v})
+	}
+	return nil
+}
+
+// MarshalBSON implements the bson.Marshaler interface for use as a standalone document.
+func (kvs KVs[K, V]) MarshalBSON() ([]byte, error) {
+	m := make(map[K]V, len(kvs))
+	for _, kv := range kvs {
+		m[kv.Key] = kv.Val
+	}
+	return bson.Marshal(m)
+}
+
+// UnmarshalBSON implements the bson.Unmarshaler interface for use as a standalone document.
+func (kvs *KVs[K, V]) UnmarshalBSON(data []byte) error {
+	var m map[K]V
+	if err := bson.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	*kvs = make(KVs[K, V], 0, len(m))
+	for k, v := range m {
+		*kvs = append(*kvs, KV[K, V]{Key: k, Val: v})
+	}
+	return nil
 }

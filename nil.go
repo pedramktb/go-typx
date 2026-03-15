@@ -7,8 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Nil is a type that can be used to represent a nil/nullable value.
@@ -72,7 +71,7 @@ func (n *Nil[T]) Scan(src any) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("cannot scan %v into Nil[%T]", src, n.Val)
+	return fmt.Errorf("typx.Nil.Scan: %T does not implement sql.Scanner and cannot be scanned from %T", n.Val, src)
 }
 
 // Value implements the driver.Valuer interface.
@@ -99,7 +98,7 @@ func (n Nil[T]) MarshalBinary() ([]byte, error) {
 	case string:
 		return []byte(v), nil
 	}
-	return nil, fmt.Errorf("cannot marshal %T into binary: expected encoding.BinaryMarshaler, string, or []byte", n.Val)
+	return nil, fmt.Errorf("typx.Nil.MarshalBinary: %T does not implement encoding.BinaryMarshaler and is not a string or []byte", n.Val)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
@@ -129,7 +128,7 @@ func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 		n.NotNil = true
 		return nil
 	}
-	return fmt.Errorf("cannot unmarshal binary into %T: expected encoding.BinaryUnmarshaler, string, or []byte", n.Val)
+	return fmt.Errorf("typx.Nil.UnmarshalBinary: %T does not implement encoding.BinaryUnmarshaler and is not a string or []byte", n.Val)
 }
 
 // MarshalText implements the encoding.TextMarshaler interface.
@@ -145,7 +144,7 @@ func (n Nil[T]) MarshalText() ([]byte, error) {
 	case string:
 		return []byte(v), nil
 	}
-	return nil, fmt.Errorf("cannot marshal %T as text: expected encoding.TextMarshaler, string, or []byte", n.Val)
+	return nil, fmt.Errorf("typx.Nil.MarshalText: %T does not implement encoding.TextMarshaler and is not a string or []byte", n.Val)
 }
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface.
@@ -175,7 +174,7 @@ func (n *Nil[T]) UnmarshalText(data []byte) error {
 		n.NotNil = true
 		return nil
 	}
-	return fmt.Errorf("cannot unmarshal text as %T: expected encoding.TextUnmarshaler, string, or []byte", n.Val)
+	return fmt.Errorf("typx.Nil.UnmarshalText: %T does not implement encoding.TextUnmarshaler and is not a string or []byte", n.Val)
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -203,21 +202,22 @@ func (n *Nil[T]) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalBSONValue implements the bson.ValueMarshaler interface.
-func (n Nil[T]) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (n Nil[T]) MarshalBSONValue() (byte, []byte, error) {
 	if !n.NotNil {
-		return bson.MarshalValue(new(T))
+		return byte(bson.TypeNull), []byte{}, nil
 	}
-	return bson.MarshalValue(n.Val)
+	t, data, err := bson.MarshalValue(n.Val)
+	return byte(t), data, err
 }
 
 // UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
-func (n *Nil[T]) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+func (n *Nil[T]) UnmarshalBSONValue(t byte, data []byte) error {
 	n.NotNil = false
-	if t == bson.TypeNull {
+	if bson.Type(t) == bson.TypeNull {
 		n.Val = *new(T)
 		return nil
 	}
-	if err := bson.UnmarshalValue(t, data, &n.Val); err != nil {
+	if err := bson.UnmarshalValue(bson.Type(t), data, &n.Val); err != nil {
 		return err
 	}
 	n.NotNil = true
