@@ -7,9 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pedramktb/go-typx"
-	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func Test_Dyn_Scan(t *testing.T) {
@@ -61,10 +60,10 @@ func Test_Dyn_Scan(t *testing.T) {
 			got := typx.Dyn{}
 			err := got.Scan(tt.value)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -112,8 +111,8 @@ func Test_Dyn_Value(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.value.Value()
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -121,7 +120,7 @@ func Test_Dyn_Value(t *testing.T) {
 func Test_Dyn_Binary_Marshal(t *testing.T) {
 	randomID := uuid.New()
 	randomBinary, err := randomID.MarshalBinary()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
@@ -150,10 +149,10 @@ func Test_Dyn_Binary_Marshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.value.MarshalBinary()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -186,10 +185,10 @@ func Test_Dyn_Binary_Unmarshal(t *testing.T) {
 			got := typx.Dyn{Val: tt.initial}
 			err := got.UnmarshalBinary(tt.value)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -198,7 +197,7 @@ func Test_Dyn_Binary_Unmarshal(t *testing.T) {
 func Test_Dyn_Text_Marshal(t *testing.T) {
 	randomID := uuid.New()
 	randomText, err := randomID.MarshalText()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name    string
@@ -227,10 +226,10 @@ func Test_Dyn_Text_Marshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.value.MarshalText()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -263,10 +262,10 @@ func Test_Dyn_Text_Unmarshal(t *testing.T) {
 			got := typx.Dyn{Val: tt.initial}
 			err := got.UnmarshalText(tt.value)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -340,13 +339,13 @@ func Test_Dyn_JSON_Marshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := json.Marshal(tt.value)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_Dyn_JSON_UnMarshal(t *testing.T) {
+func Test_Dyn_JSON_Unmarshal(t *testing.T) {
 	randomID := uuid.New()
 	tests := []struct {
 		name  string
@@ -389,13 +388,13 @@ func Test_Dyn_JSON_UnMarshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := typx.Dyn{}
 			err := json.Unmarshal(tt.value, &got)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_Dyn_JSON_UnMarshal_InStruct(t *testing.T) {
+func Test_Dyn_JSON_Unmarshal_InStruct(t *testing.T) {
 	tests := []struct {
 		name  string
 		value []byte
@@ -432,8 +431,8 @@ func Test_Dyn_JSON_UnMarshal_InStruct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := dynField{}
 			err := json.Unmarshal(tt.value, &got)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -474,16 +473,16 @@ func Test_Dyn_BSON_Marshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, got, err := tt.value.MarshalBSONValue()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
 }
 
-func Test_Dyn_BSON_UnMarshal(t *testing.T) {
+func Test_Dyn_BSON_Unmarshal(t *testing.T) {
 	randomID := uuid.New()
 	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
 
@@ -498,7 +497,7 @@ func Test_Dyn_BSON_UnMarshal(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		bsonType bsontype.Type
+		bsonType bson.Type
 		value    []byte
 		want     typx.Dyn
 	}{
@@ -543,9 +542,9 @@ func Test_Dyn_BSON_UnMarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := typx.Dyn{}
-			err := got.UnmarshalBSONValue(tt.bsonType, tt.value)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			err := got.UnmarshalBSONValue(byte(tt.bsonType), tt.value)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
