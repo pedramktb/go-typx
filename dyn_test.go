@@ -548,3 +548,89 @@ func Test_Dyn_BSON_Unmarshal(t *testing.T) {
 		})
 	}
 }
+func Test_Dyn_BSON_Document_Marshal(t *testing.T) {
+	randomID := uuid.New()
+	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
+	nestedObj := map[string]any{
+		"name": "test",
+		"nested": map[string]any{
+			"value": 42,
+			"items": []any{"a", "b", "c"},
+		},
+	}
+	nestedBSON, _ := bson.Marshal(nestedObj)
+
+	tests := []struct {
+		name    string
+		value   typx.Dyn
+		want    []byte
+		wantErr bool
+	}{
+		{
+			name:  "object",
+			value: typx.Dyn{Val: map[string]any{"ID": randomID.String()}},
+			want:  objBSON,
+		},
+		{
+			name:  "nested object with array",
+			value: typx.Dyn{Val: nestedObj},
+			want:  nestedBSON,
+		},
+		{
+			name:    "non-document value",
+			value:   typx.Dyn{Val: "example"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.value.MarshalBSON()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func Test_Dyn_BSON_Document_Unmarshal(t *testing.T) {
+	randomID := uuid.New()
+	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
+	nestedObj := map[string]any{
+		"name": "test",
+		"nested": map[string]any{
+			"value": int32(42),
+			"items": []any{"a", "b", "c"},
+		},
+	}
+	nestedBSON, _ := bson.Marshal(nestedObj)
+
+	tests := []struct {
+		name  string
+		value []byte
+		want  typx.Dyn
+	}{
+		{
+			name:  "object",
+			value: objBSON,
+			want:  typx.Dyn{Val: map[string]any{"ID": randomID.String()}},
+		},
+		{
+			name:  "nested object with array",
+			value: nestedBSON,
+			want:  typx.Dyn{Val: nestedObj},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := typx.Dyn{}
+			err := got.UnmarshalBSON(tt.value)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

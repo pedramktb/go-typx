@@ -87,6 +87,20 @@ func convertBSONToNative(v any) any {
 	}
 }
 
+// MarshalBSON implements the bson.Marshaler interface for use as a standalone document.
+func (d Dyn) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(d.Val)
+}
+
+// UnmarshalBSON implements the bson.Unmarshaler interface for use as a standalone document.
+func (d *Dyn) UnmarshalBSON(data []byte) error {
+	if err := bson.Unmarshal(data, &d.Val); err != nil {
+		return err
+	}
+	d.Val = convertBSONToNative(d.Val)
+	return nil
+}
+
 // The following implementations are provided for convenience,
 // but they require that the underlying type implements the respective interfaces.
 
