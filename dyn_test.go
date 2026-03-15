@@ -550,13 +550,13 @@ func Test_Dyn_BSON_Unmarshal(t *testing.T) {
 }
 func Test_Dyn_BSON_Document_Marshal(t *testing.T) {
 	randomID := uuid.New()
-	objBSON, _ := bson.Marshal(map[string]any{"ID": randomID.String()})
-	nestedObj := map[string]any{
-		"name": "test",
-		"nested": map[string]any{
-			"value": 42,
-			"items": []any{"a", "b", "c"},
-		},
+	objBSON, _ := bson.Marshal(bson.D{{Key: "ID", Value: randomID.String()}})
+	nestedObj := bson.D{
+		{Key: "name", Value: "test"},
+		{Key: "nested", Value: bson.D{
+			{Key: "value", Value: 42},
+			{Key: "items", Value: bson.A{"a", "b", "c"}},
+		}},
 	}
 	nestedBSON, _ := bson.Marshal(nestedObj)
 
@@ -568,7 +568,7 @@ func Test_Dyn_BSON_Document_Marshal(t *testing.T) {
 	}{
 		{
 			name:  "object",
-			value: typx.Dyn{Val: map[string]any{"ID": randomID.String()}},
+			value: typx.Dyn{Val: bson.D{{Key: "ID", Value: randomID.String()}}},
 			want:  objBSON,
 		},
 		{
