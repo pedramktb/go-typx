@@ -1,6 +1,7 @@
 package typx
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -90,7 +91,7 @@ func (kvs *KVs[K, V]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-var _ driver.Valuer = (*KVs[any, any])(nil)
+var _ sql.Scanner = (*KVs[any, any])(nil)
 
 // Scan implements the [sql.Scanner] interface.
 // The column should be a type that can hold JSON data (JSONB, JSON, TEXT, etc).
@@ -143,7 +144,7 @@ func (kvs *KVs[K, V]) UnmarshalBSONValue(t byte, data []byte) error {
 	return nil
 }
 
-var _ bson.ValueMarshaler = (*KVs[any, any])(nil)
+var _ bson.Marshaler = (*KVs[any, any])(nil)
 
 // MarshalBSON implements the [bson.Marshaler] interface for use as a standalone document.
 func (kvs KVs[K, V]) MarshalBSON() ([]byte, error) {
@@ -154,7 +155,7 @@ func (kvs KVs[K, V]) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(m)
 }
 
-var _ bson.Marshaler = (*KVs[any, any])(nil)
+var _ bson.Unmarshaler = (*KVs[any, any])(nil)
 
 // UnmarshalBSON implements the [bson.Unmarshaler] interface for use as a standalone document.
 func (kvs *KVs[K, V]) UnmarshalBSON(data []byte) error {

@@ -189,7 +189,7 @@ func (n *Nil[T]) UnmarshalText(data []byte) error {
 	return fmt.Errorf("typx.Nil.UnmarshalText: %T does not implement encoding.TextUnmarshaler and is not a string or []byte", n.Val)
 }
 
-var _ bson.ValueMarshaler = Nil[any]{}
+var _ json.Marshaler = Nil[any]{}
 
 // MarshalJSON implements the [json.Marshaler] interface.
 func (n Nil[T]) MarshalJSON() ([]byte, error) {
