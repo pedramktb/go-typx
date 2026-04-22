@@ -18,10 +18,10 @@ type Nil[T any] struct {
 	NotNil bool
 }
 
-// NilFrom creates a [Nil] from a non-nil value.
+// [NilFrom] creates a [Nil] from a non-nil value.
 func NilFrom[T any](value T) Nil[T] { return Nil[T]{Val: value, NotNil: true} }
 
-// NilFromPtr creates a [Nil] from a pointer. If the pointer is nil, NotNil is false.
+// [NilFromPtr] creates a [Nil] from a pointer. If the pointer is nil, NotNil is false.
 func NilFromPtr[T any](value *T) Nil[T] {
 	if value == nil {
 		return Nil[T]{}
@@ -29,7 +29,7 @@ func NilFromPtr[T any](value *T) Nil[T] {
 	return Nil[T]{Val: *value, NotNil: true}
 }
 
-// Ptr returns a pointer to the value if NotNil is true, otherwise nil.
+// [Ptr] returns a pointer to the value if NotNil is true, otherwise nil.
 // It uses a non-pointer receiver so that the modified pointer does not affect the original value.
 func (n Nil[T]) Ptr() *T {
 	if !n.NotNil {

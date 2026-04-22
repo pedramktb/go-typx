@@ -22,12 +22,12 @@ type Opt[T any] struct {
 	Set bool
 }
 
-// OptFrom creates an [Opt] that is set to the given value.
+// [OptFrom] creates an [Opt] that is set to the given value.
 func OptFrom[T any](value T) Opt[T] {
 	return Opt[T]{Val: value, Set: true}
 }
 
-// OptFromPtr creates an [Opt] from a pointer. If the pointer is nil, the result is unset.
+// [OptFromPtr] creates an [Opt] from a pointer. If the pointer is nil, the result is unset.
 func OptFromPtr[T any](ptr *T) Opt[T] {
 	if ptr == nil {
 		return Opt[T]{Set: false}
