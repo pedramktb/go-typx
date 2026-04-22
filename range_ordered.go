@@ -17,6 +17,10 @@ type OrderedBound[O Ordered[O]] struct {
 	Unbounded bool `json:"unbounded,omitempty" bson:"unbounded,omitempty"` // whether this is an infinite/unbounded bound (true) or a finite bound (false)
 }
 
+// OrderedRange supports any Ordered type for in-process use, JSON, and BSON storage.
+// The Scan and Value methods implement PostgreSQL range literals; note that string-based
+// types have no corresponding PostgreSQL range type and should not be used with SQL.
+// In the case of a type implementing PGBoundUnmarshaler/Marshaler, those are used to parse/format the bounds of the range literal.
 type OrderedRange[O Ordered[O]] struct {
 	Lower OrderedBound[O] `json:"lower" bson:"lower"` // lower bound
 	Upper OrderedBound[O] `json:"upper" bson:"upper"` // upper bound

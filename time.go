@@ -8,9 +8,11 @@ import (
 )
 
 /*
-DateTime is a [time.Time] wrapper for use as an [OrderedRange] / [OrderedMultiRange]
+DateTime is a [time.Time] wrapper for use as an [OrderedRange] / [OrderedMultiRange] with tsrange, tstzrange, tsmultirange, and tstzmultirange backing types.
 All constructors and methods strip the monotonic clock reading so
 that two DateTime values representing the same instant compare and marshal identically.
+
+This type also supports operations with the Duration type, which supports dynamic Month and Day components.
 */
 type DateTime struct{ time.Time }
 
@@ -75,4 +77,28 @@ func (t *DateTime) Scan(value any) error {
 		return fmt.Errorf("typx.DateTime.Scan: unsupported type %T", value)
 	}
 	return nil
+}
+
+// AddDuration adds a Duration with dynamic Month and Day components to the DateTime, returning a new DateTime.
+func (t DateTime) AddDuration(d Duration) DateTime {
+	newTime := t.Time.Add(d.Time)
+	newTime = newTime.AddDate(0, int(d.Month), int(d.Day))
+	return DateTime{newTime.Round(0)}
+}
+
+// SubDateTime returns the Duration d such that t.Equal(other.AddDuration(d)).
+func (t DateTime) SubDateTime(other DateTime) Duration {
+	yearDiff := t.Year() - other.Year()
+	monthDiff := int(t.Month()) - int(other.Month())
+	month := int64(12*yearDiff + monthDiff)
+	day := int64(t.Day() - other.Day())
+	// Compute the intermediate time after applying the calendar components, then
+	// capture the remaining nanosecond difference as the Time component.
+	// Use yearDiff/monthDiff separately to avoid a potentially large int64→int cast.
+	intermediate := other.Time.AddDate(yearDiff, monthDiff, int(day))
+	return Duration{
+		Time:  t.Time.Sub(intermediate),
+		Day:   day,
+		Month: month,
+	}
 }

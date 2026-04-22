@@ -12,6 +12,7 @@ type Ordered[T any] interface {
 // range bound literal (e.g. "2024-01-01 00:00:00+00" for tstzrange, "12345" for numrange).
 // OrderedRange.Value and OrderedMultiRange.Value use this to produce a native PG range
 // literal; types that don't implement it are JSON-encoded instead.
+// In non-PostgreSQL but still SQL contexts, the same PostgreSQL range literal syntax is used but without relying on the database to parse it.
 type PGBoundMarshaler interface {
 	MarshalPGBound() ([]byte, error)
 }
@@ -20,6 +21,7 @@ type PGBoundMarshaler interface {
 // PostgreSQL range bound literal.
 // OrderedRange.Scan and OrderedMultiRange.Scan use this to parse a native PG range
 // literal; types that don't implement it are JSON-decoded instead.
+// In non-PostgreSQL but still SQL contexts, the same PostgreSQL range literal syntax is used but without relying on the database to parse it.
 type PGBoundUnmarshaler interface {
 	UnmarshalPGBound([]byte) error
 }
