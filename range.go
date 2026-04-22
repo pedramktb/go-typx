@@ -2,13 +2,14 @@ package typx
 
 import (
 	"cmp"
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"slices"
 	"strings"
 )
 
-// Bound represents one end of a range with its value and whether it is exclusive.
+// [Bound] represents one end of a range with its value and whether it is exclusive.
 // The zero value is inclusive (Exclusive == false) and bounded.
 // When Unbounded is true the bound is ±∞; Val and Exclusive are ignored.
 type Bound[O cmp.Ordered] struct {
@@ -17,7 +18,7 @@ type Bound[O cmp.Ordered] struct {
 	Unbounded bool `json:"unbounded,omitempty" bson:"unbounded,omitempty"` // whether this is an infinite/unbounded bound (true) or a finite bound (false)
 }
 
-// Range supports any cmp.Ordered type for in-process use, JSON, and BSON storage.
+// [Range] supports any cmp.Ordered type for in-process use, JSON, and BSON storage.
 // The Scan and Value methods implement PostgreSQL range literals; note that string-based
 // types have no corresponding PostgreSQL range type and should not be used with SQL.
 type Range[O cmp.Ordered] struct {
@@ -25,6 +26,7 @@ type Range[O cmp.Ordered] struct {
 	Upper Bound[O] `json:"upper" bson:"upper"` // upper bound
 }
 
+// Contains returns true if the given value is contained within the range.
 func (r Range[O]) Contains(val O) bool {
 	var lowerOk bool
 	if r.Lower.Unbounded {
@@ -43,7 +45,9 @@ func (r Range[O]) Contains(val O) bool {
 	return lowerOk && upperOk
 }
 
-// Scan implements the sql.Scanner interface for Range.
+var _ sql.Scanner = (*Range[byte])(nil)
+
+// Scan implements the [sql.Scanner] interface for [Range].
 // It expects a PostgreSQL range literal such as [min,max] or (min,max).
 func (r *Range[O]) Scan(src any) error {
 	var str string
@@ -93,7 +97,9 @@ func (r *Range[O]) Scan(src any) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface for Range.
+var _ driver.Valuer = (*Range[byte])(nil)
+
+// Value implements the [driver.Valuer] interface for [Range].
 // It returns a PostgreSQL range literal respecting the bound types, e.g. [min,max) or (min,max].
 func (r Range[O]) Value() (driver.Value, error) {
 	var lo, hi, lowerStr, upperStr string
@@ -164,7 +170,7 @@ func mergeUpper[O cmp.Ordered](a, b Bound[O]) Bound[O] {
 	return a
 }
 
-// NewMultiRange takes a slice of ranges and returns a new multi range that is optimized by merging overlapping ranges.
+// [NewMultiRange] takes a slice of [Range]s and returns a new [MultiRange] that is optimized by merging overlapping ranges.
 func NewMultiRange[O cmp.Ordered](src []Range[O]) MultiRange[O] {
 	if len(src) == 0 {
 		return nil
@@ -208,6 +214,7 @@ func NewMultiRange[O cmp.Ordered](src []Range[O]) MultiRange[O] {
 	return mr
 }
 
+// Contains returns true if the given value is contained within any of the ranges in the multirange.
 func (mr MultiRange[O]) Contains(val O) bool {
 	for _, r := range mr {
 		if r.Contains(val) {
@@ -217,7 +224,9 @@ func (mr MultiRange[O]) Contains(val O) bool {
 	return false
 }
 
-// Scan implements the sql.Scanner interface for MultiRange.
+var _ sql.Scanner = (*MultiRange[byte])(nil)
+
+// Scan implements the [sql.Scanner] interface for [MultiRange].
 // It expects a PostgreSQL multirange literal such as {[1,5],[10,20]}.
 func (mr *MultiRange[O]) Scan(src any) error {
 	var str string
@@ -259,7 +268,9 @@ func (mr *MultiRange[O]) Scan(src any) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface for MultiRange.
+var _ driver.Valuer = (*MultiRange[byte])(nil)
+
+// Value implements the [driver.Valuer] interface for [MultiRange].
 // It returns a PostgreSQL multirange literal such as {[1,5],[10,20]}.
 func (mr MultiRange[O]) Value() (driver.Value, error) {
 	parts := make([]string, 0, len(mr))

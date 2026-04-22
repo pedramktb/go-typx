@@ -1,6 +1,7 @@
 package typx
 
 import (
+	"encoding"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -8,20 +9,22 @@ import (
 	"time"
 )
 
-// Duration is a struct that represents a duration of time, including both a time.Duration and additional fields for days and months.
+// [Duration] is a struct that represents a duration of time, including both a [time.Duration] and additional fields for days and months.
 // This allows for more flexible time calculations that can account for varying lengths of days and months.
 type Duration struct {
-	Time  time.Duration // The time.Duration field represents the time part of duration in terms of hours, minutes, seconds, etc.
+	Time  time.Duration // The [time.Duration] field represents the time part of duration in terms of hours, minutes, seconds, etc.
 	Day   int64         // The Day field represents the number of days in the duration. This is useful for calculations that need to account for varying lengths of days (e.g., due to daylight saving time changes).
 	Month int64         // The Month field represents the number of months in the duration. This is useful for calculations that need to account for varying lengths of months (e.g., due to the number of days in each month).
 }
 
-// String returns a string representation of the Duration, combining the time, day, and month components into a human-readable format.
+var _ fmt.Stringer = Duration{}
+
+// String returns a string representation of the [Duration], combining the time, day, and month components into a human-readable format.
 func (d Duration) String() string {
 	return fmt.Sprintf("%dM%dD%s", d.Month, d.Day, d.Time)
 }
 
-// Abs returns a new Duration with the absolute values of the time, day, and month components. This is useful for ensuring that all components of the duration are non-negative, regardless of their original signs.
+// Abs returns a new [Duration] with the absolute values of the time, day, and month components. This is useful for ensuring that all components of the duration are non-negative, regardless of their original signs.
 func (d Duration) Abs() Duration {
 	return Duration{
 		Time:  d.Time.Abs(),
@@ -30,7 +33,7 @@ func (d Duration) Abs() Duration {
 	}
 }
 
-// Add adds another Duration to the current Duration, combining their time, day, and month components.
+// Add adds another [Duration] to the current [Duration], combining their time, day, and month components.
 // The operation is similar to a vector addition, as they are independent unless a point in time is being calculated.
 func (d Duration) Add(other Duration) Duration {
 	return Duration{
@@ -40,7 +43,7 @@ func (d Duration) Add(other Duration) Duration {
 	}
 }
 
-// Sub subtracts another Duration from the current Duration, combining their time, day, and month components.
+// Sub subtracts another [Duration] from the current [Duration], combining their time, day, and month components.
 // The operation is similar to a vector subtraction, as they are independent unless a point in time is being calculated.
 func (d Duration) Sub(other Duration) Duration {
 	return Duration{
@@ -53,8 +56,9 @@ func (d Duration) Sub(other Duration) Duration {
 var iso8601DurationRe = regexp.MustCompile(
 	`^(-?)P(?:(-?\d+)Y)?(?:(-?\d+)M)?(?:(-?\d+)D)?(?:T(?:(-?\d+)H)?(?:(-?\d+)M)?(?:(-?\d+(?:\.\d+)?)S)?)?$`,
 )
+var _ encoding.TextMarshaler = Duration{}
 
-// MarshalText implements [encoding.TextMarshaler].
+// MarshalText implements the [encoding.TextMarshaler] interface.
 // Produces an ISO 8601 duration string (e.g. "P1Y2M3DT4H5M6.789S").
 // Month values >= 12 are expressed as years + remaining months.
 func (d Duration) MarshalText() ([]byte, error) {
@@ -111,7 +115,9 @@ func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(b.String()), nil
 }
 
-// UnmarshalText implements [encoding.TextUnmarshaler].
+var _ encoding.TextUnmarshaler = (*Duration)(nil)
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 // Accepts an ISO 8601 duration string (e.g. "P1Y2M3DT4H5M6.789S").
 // Years are converted to months (1Y = 12M).
 // A leading "-P" negates all components.
