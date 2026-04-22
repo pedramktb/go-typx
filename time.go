@@ -79,21 +79,15 @@ func (t *DateTime) Scan(value any) error {
 	return nil
 }
 
-// Add adds a Duration with dynamic Month and Day components to the DateTime, returning a new DateTime.
-// For the standard time.Duration addition, use the time.Time.Add method on the embedded Time field directly.
-func (t DateTime) Add(d Duration) DateTime {
-	// Add the time component using time.Time's Add method
+// AddDuration adds a Duration with dynamic Month and Day components to the DateTime, returning a new DateTime.
+func (t DateTime) AddDuration(d Duration) DateTime {
 	newTime := t.Time.Add(d.Time)
-
-	// Add the day and month components using time.Time's AddDate method
 	newTime = newTime.AddDate(0, int(d.Month), int(d.Day))
-
-	return DateTime{newTime}
+	return DateTime{newTime.Round(0)}
 }
 
-// Sub returns the Duration d such that other.Add(d) == t.
-// For getting the standard time.Duration difference between two DateTime values, use the time.Time.Sub(other.Time) method on the embedded Time fields directly.
-func (t DateTime) Sub(other DateTime) Duration {
+// SubDateTime returns the Duration d such that t.Equal(other.AddDuration(d)).
+func (t DateTime) SubDateTime(other DateTime) Duration {
 	month := int64(12*(t.Year()-other.Year()) + int(t.Month()) - int(other.Month()))
 	day := int64(t.Day() - other.Day())
 	// Compute the intermediate time after applying the calendar components, then

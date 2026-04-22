@@ -127,19 +127,41 @@ func (d *Duration) UnmarshalText(text []byte) error {
 		sign = -1
 	}
 
-	parseInt64 := func(s string) int64 {
-		if s == "" {
-			return 0
-		}
-		n, _ := strconv.ParseInt(s, 10, 64)
-		return n
+	if m[2] == "" && m[3] == "" && m[4] == "" && m[5] == "" && m[6] == "" && m[7] == "" {
+		return fmt.Errorf("typx.Duration.UnmarshalText: cannot parse %q as ISO 8601 duration", s)
 	}
 
-	years := parseInt64(m[2])
-	months := parseInt64(m[3])
-	days := parseInt64(m[4])
-	hours := parseInt64(m[5])
-	mins := parseInt64(m[6])
+	parseInt64 := func(s string) (int64, error) {
+		if s == "" {
+			return 0, nil
+		}
+		n, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("typx.Duration.UnmarshalText: cannot parse component %q: %w", s, err)
+		}
+		return n, nil
+	}
+
+	years, err := parseInt64(m[2])
+	if err != nil {
+		return err
+	}
+	months, err := parseInt64(m[3])
+	if err != nil {
+		return err
+	}
+	days, err := parseInt64(m[4])
+	if err != nil {
+		return err
+	}
+	hours, err := parseInt64(m[5])
+	if err != nil {
+		return err
+	}
+	mins, err := parseInt64(m[6])
+	if err != nil {
+		return err
+	}
 
 	var secsDur time.Duration
 	if m[7] != "" {
