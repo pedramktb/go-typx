@@ -88,11 +88,14 @@ func (t DateTime) AddDuration(d Duration) DateTime {
 
 // SubDateTime returns the Duration d such that t.Equal(other.AddDuration(d)).
 func (t DateTime) SubDateTime(other DateTime) Duration {
-	month := int64(12*(t.Year()-other.Year()) + int(t.Month()) - int(other.Month()))
+	yearDiff := t.Year() - other.Year()
+	monthDiff := int(t.Month()) - int(other.Month())
+	month := int64(12*yearDiff + monthDiff)
 	day := int64(t.Day() - other.Day())
 	// Compute the intermediate time after applying the calendar components, then
 	// capture the remaining nanosecond difference as the Time component.
-	intermediate := other.Time.AddDate(0, int(month), int(day))
+	// Use yearDiff/monthDiff separately to avoid a potentially large int64→int cast.
+	intermediate := other.Time.AddDate(yearDiff, monthDiff, int(day))
 	return Duration{
 		Time:  t.Time.Sub(intermediate),
 		Day:   day,
