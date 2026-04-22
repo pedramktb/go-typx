@@ -16,7 +16,6 @@ type Duration struct {
 	Month int64         // The Month field represents the number of months in the duration. This is useful for calculations that need to account for varying lengths of months (e.g., due to the number of days in each month).
 }
 
-// 2540400h10m10.000000000s
 // String returns a string representation of the Duration, combining the time, day, and month components into a human-readable format.
 func (d Duration) String() string {
 	return fmt.Sprintf("%dM%dD%s", d.Month, d.Day, d.Time)
