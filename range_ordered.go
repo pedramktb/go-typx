@@ -1,6 +1,7 @@
 package typx
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 	"strings"
 )
 
-// OrderedBound represents one end of an OrderedRange with its value and whether it is exclusive.
+// [OrderedBound] represents one end of an [OrderedRange] with its value and whether it is exclusive.
 // The zero value is inclusive (Exclusive == false) and bounded.
 // When Unbounded is true the bound is ±∞; Val and Exclusive are ignored.
 type OrderedBound[O Ordered[O]] struct {
@@ -17,15 +18,16 @@ type OrderedBound[O Ordered[O]] struct {
 	Unbounded bool `json:"unbounded,omitempty" bson:"unbounded,omitempty"` // whether this is an infinite/unbounded bound (true) or a finite bound (false)
 }
 
-// OrderedRange supports any Ordered type for in-process use, JSON, and BSON storage.
+// [OrderedRange] supports any [Ordered] type for in-process use, JSON, and BSON storage.
 // The Scan and Value methods implement PostgreSQL range literals; note that string-based
 // types have no corresponding PostgreSQL range type and should not be used with SQL.
-// In the case of a type implementing PGBoundUnmarshaler/Marshaler, those are used to parse/format the bounds of the range literal.
+// In the case of a type implementing [PGBoundUnmarshaler]/[PGBoundMarshaler], those are used to parse/format the bounds of the range literal.
 type OrderedRange[O Ordered[O]] struct {
 	Lower OrderedBound[O] `json:"lower" bson:"lower"` // lower bound
 	Upper OrderedBound[O] `json:"upper" bson:"upper"` // upper bound
 }
 
+// Contains returns true if the given value is contained within the range.
 func (r OrderedRange[O]) Contains(val O) bool {
 	var lowerOk bool
 	if r.Lower.Unbounded {
@@ -44,8 +46,10 @@ func (r OrderedRange[O]) Contains(val O) bool {
 	return lowerOk && upperOk
 }
 
-// Scan implements the sql.Scanner interface for OrderedRange.
-// If *O implements PGBoundUnmarshaler it parses a PostgreSQL range literal (e.g. [min,max]).
+var _ sql.Scanner = (*OrderedRange[ordered])(nil)
+
+// Scan implements the [sql.Scanner] interface for [OrderedRange].
+// If *O implements [PGBoundUnmarshaler] it parses a PostgreSQL range literal (e.g. [min,max]).
 // Otherwise it JSON-decodes a range object, suitable for text/jsonb columns.
 func (r *OrderedRange[O]) Scan(src any) error {
 	var str string
@@ -102,8 +106,10 @@ func (r *OrderedRange[O]) scanRangeLiteral(str string) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface for OrderedRange.
-// If O or *O implements PGBoundMarshaler it returns a PostgreSQL range literal (e.g. [min,max)).
+var _ driver.Valuer = (*OrderedRange[ordered])(nil)
+
+// Value implements the [driver.Valuer] interface for [OrderedRange].
+// If O or *O implements [PGBoundMarshaler] it returns a PostgreSQL range literal (e.g. [min,max)).
 // Otherwise it JSON-encodes the range for storage in a text/jsonb column.
 func (r OrderedRange[O]) Value() (driver.Value, error) {
 	var zero O
@@ -191,6 +197,7 @@ func (r OrderedRange[O]) valueRangeLiteralPtr() (driver.Value, error) {
 	return fmt.Sprintf("%s%s,%s%s", lo, lowerStr, upperStr, hi), nil
 }
 
+// [OrderedMultiRange] represents a slice of non-overlapping [OrderedRange]s of the same type, sorted by lower bound.
 type OrderedMultiRange[O Ordered[O]] []OrderedRange[O]
 
 func orderedRangeOverlaps[O Ordered[O]](current, r OrderedRange[O]) bool {
@@ -229,6 +236,7 @@ func mergeOrderedUpper[O Ordered[O]](a, b OrderedBound[O]) OrderedBound[O] {
 	return a
 }
 
+// [NewOrderedMultiRange] takes a slice of [OrderedRange]s and returns an [OrderedMultiRange] with overlapping or adjacent ranges merged.
 func NewOrderedMultiRange[O Ordered[O]](src []OrderedRange[O]) OrderedMultiRange[O] {
 	if len(src) == 0 {
 		return nil
@@ -272,6 +280,7 @@ func NewOrderedMultiRange[O Ordered[O]](src []OrderedRange[O]) OrderedMultiRange
 	return mr
 }
 
+// Contains returns true if the given value is contained within any of the ranges in the multi range.
 func (mr OrderedMultiRange[O]) Contains(val O) bool {
 	for _, r := range mr {
 		if r.Contains(val) {
@@ -281,8 +290,10 @@ func (mr OrderedMultiRange[O]) Contains(val O) bool {
 	return false
 }
 
-// Scan implements the sql.Scanner interface for OrderedMultiRange.
-// If *O implements PGBoundUnmarshaler it parses a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
+var _ sql.Scanner = (*OrderedMultiRange[ordered])(nil)
+
+// Scan implements the [sql.Scanner] interface for [OrderedMultiRange].
+// If *O implements [PGBoundUnmarshaler] it parses a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
 // Otherwise it JSON-decodes a JSON array of range objects, suitable for text/jsonb columns.
 func (mr *OrderedMultiRange[O]) Scan(src any) error {
 	var str string
@@ -332,8 +343,10 @@ func (mr *OrderedMultiRange[O]) scanMultiRangeLiteral(str string) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface for OrderedMultiRange.
-// If O or *O implements PGBoundMarshaler it returns a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
+var _ driver.Valuer = (*OrderedMultiRange[ordered])(nil)
+
+// Value implements the [driver.Valuer] interface for [OrderedMultiRange].
+// If O or *O implements [PGBoundMarshaler] it returns a PostgreSQL multirange literal (e.g. {[1,5],[10,20]}).
 // Otherwise it JSON-encodes the multirange as a JSON array for storage in a text/jsonb column.
 func (mr OrderedMultiRange[O]) Value() (driver.Value, error) {
 	var zero O

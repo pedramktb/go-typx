@@ -10,18 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Nil is a type that can be used to represent a nil/nullable value.
+// [Nil] is a type that can be used to represent a nil/nullable value.
 // It implements most of the interfaces that are used to marshal and unmarshal values.
-// For optional values that are not present, use Opt[T] instead.
+// For optional values that are not present, use [Opt] instead.
 type Nil[T any] struct {
 	Val    T
 	NotNil bool
 }
 
-// NilFrom creates a Nil[T] from a non-nil value.
+// NilFrom creates a [Nil] from a non-nil value.
 func NilFrom[T any](value T) Nil[T] { return Nil[T]{Val: value, NotNil: true} }
 
-// NilFromPtr creates a Nil[T] from a pointer. If the pointer is nil, NotNil is false.
+// NilFromPtr creates a [Nil] from a pointer. If the pointer is nil, NotNil is false.
 func NilFromPtr[T any](value *T) Nil[T] {
 	if value == nil {
 		return Nil[T]{}
@@ -38,7 +38,9 @@ func (n Nil[T]) Ptr() *T {
 	return &n.Val
 }
 
-// Scan implements the sql.Scanner interface.
+var _ sql.Scanner = (*Nil[any])(nil)
+
+// Scan implements the [sql.Scanner] interface.
 func (n *Nil[T]) Scan(src any) error {
 	n.NotNil = false
 	if src == nil {
@@ -74,7 +76,9 @@ func (n *Nil[T]) Scan(src any) error {
 	return fmt.Errorf("typx.Nil.Scan: %T does not implement sql.Scanner and cannot be scanned from %T", n.Val, src)
 }
 
-// Value implements the driver.Valuer interface.
+var _ driver.Valuer = (*Nil[any])(nil)
+
+// Value implements the [driver.Valuer] interface.
 func (n Nil[T]) Value() (driver.Value, error) {
 	if !n.NotNil {
 		return nil, nil
@@ -85,7 +89,9 @@ func (n Nil[T]) Value() (driver.Value, error) {
 	return n.Val, nil
 }
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface.
+var _ encoding.BinaryMarshaler = Nil[any]{}
+
+// MarshalBinary implements the [encoding.BinaryMarshaler] interface.
 func (n Nil[T]) MarshalBinary() ([]byte, error) {
 	if !n.NotNil {
 		return []byte(nil), nil
@@ -101,7 +107,9 @@ func (n Nil[T]) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("typx.Nil.MarshalBinary: %T does not implement encoding.BinaryMarshaler and is not a string or []byte", n.Val)
 }
 
-// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+var _ encoding.BinaryUnmarshaler = (*Nil[any])(nil)
+
+// UnmarshalBinary implements the [encoding.BinaryUnmarshaler] interface.
 func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 	n.NotNil = false
 	if data == nil {
@@ -131,7 +139,9 @@ func (n *Nil[T]) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("typx.Nil.UnmarshalBinary: %T does not implement encoding.BinaryUnmarshaler and is not a string or []byte", n.Val)
 }
 
-// MarshalText implements the encoding.TextMarshaler interface.
+var _ encoding.TextMarshaler = Nil[any]{}
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
 func (n Nil[T]) MarshalText() ([]byte, error) {
 	if !n.NotNil {
 		return []byte("null"), nil
@@ -147,7 +157,9 @@ func (n Nil[T]) MarshalText() ([]byte, error) {
 	return nil, fmt.Errorf("typx.Nil.MarshalText: %T does not implement encoding.TextMarshaler and is not a string or []byte", n.Val)
 }
 
-// UnmarshalText implements the encoding.TextUnmarshaler interface.
+var _ encoding.TextUnmarshaler = (*Nil[any])(nil)
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (n *Nil[T]) UnmarshalText(data []byte) error {
 	n.NotNil = false
 	if data == nil {
@@ -177,7 +189,9 @@ func (n *Nil[T]) UnmarshalText(data []byte) error {
 	return fmt.Errorf("typx.Nil.UnmarshalText: %T does not implement encoding.TextUnmarshaler and is not a string or []byte", n.Val)
 }
 
-// MarshalJSON implements the json.Marshaler interface.
+var _ bson.ValueMarshaler = Nil[any]{}
+
+// MarshalJSON implements the [json.Marshaler] interface.
 func (n Nil[T]) MarshalJSON() ([]byte, error) {
 	if !n.NotNil {
 		return []byte("null"), nil
@@ -185,7 +199,9 @@ func (n Nil[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n.Val)
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface.
+var _ json.Unmarshaler = (*Nil[any])(nil)
+
+// UnmarshalJSON implements the [json.Unmarshaler] interface.
 func (n *Nil[T]) UnmarshalJSON(data []byte) error {
 	n.NotNil = false
 	var t *T
@@ -201,6 +217,8 @@ func (n *Nil[T]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+var _ bson.ValueMarshaler = (*Nil[any])(nil)
+
 // MarshalBSONValue implements the bson.ValueMarshaler interface.
 func (n Nil[T]) MarshalBSONValue() (byte, []byte, error) {
 	if !n.NotNil {
@@ -209,6 +227,8 @@ func (n Nil[T]) MarshalBSONValue() (byte, []byte, error) {
 	t, data, err := bson.MarshalValue(n.Val)
 	return byte(t), data, err
 }
+
+var _ bson.ValueUnmarshaler = (*Nil[any])(nil)
 
 // UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
 func (n *Nil[T]) UnmarshalBSONValue(t byte, data []byte) error {

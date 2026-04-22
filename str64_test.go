@@ -20,7 +20,7 @@ func Test_Str64_RoundTrip(t *testing.T) {
 	require.Len(t, str, 22)
 
 	// FromString recovers exactly the original 16 bytes — no slicing required.
-	s2, err := typx.FromString(str)
+	s2, err := typx.Str64From(str)
 	require.NoError(t, err)
 	require.Equal(t, s, s2)
 
@@ -44,6 +44,6 @@ func Test_Str64_MarshalUnmarshalText(t *testing.T) {
 }
 
 func Test_Str64_UnsupportedCharacter(t *testing.T) {
-	_, err := typx.FromString("hello!")
+	_, err := typx.Str64From("hello!")
 	require.Error(t, err)
 }

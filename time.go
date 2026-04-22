@@ -1,6 +1,7 @@
 package typx
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strings"
@@ -8,23 +9,30 @@ import (
 )
 
 /*
-DateTime is a [time.Time] wrapper for use as an [OrderedRange] / [OrderedMultiRange] with tsrange, tstzrange, tsmultirange, and tstzmultirange backing types.
+[DateTime] is a [time.Time] wrapper for use as an [OrderedRange] / [OrderedMultiRange] with tsrange, tstzrange, tsmultirange, and tstzmultirange backing types.
 All constructors and methods strip the monotonic clock reading so
-that two DateTime values representing the same instant compare and marshal identically.
+that two [DateTime] values representing the same instant compare and marshal identically.
 
-This type also supports operations with the Duration type, which supports dynamic Month and Day components.
+This type also supports operations with the [Duration] type, which supports dynamic Month and Day components.
 */
 type DateTime struct{ time.Time }
 
+var _ Ordered[DateTime] = DateTime{}
+
+// Compare implements the [Ordered] interface by comparing the time values with the monotonic clock stripped.
 func (t DateTime) Compare(other DateTime) int {
 	return t.Time.Compare(other.Time)
 }
+
+var _ PGBoundMarshaler = DateTime{}
 
 // MarshalPGBound implements [PGBoundMarshaler].
 // Produces a PostgreSQL timestamptz literal.
 func (t DateTime) MarshalPGBound() ([]byte, error) {
 	return []byte(t.Time.Round(0).Format(time.RFC3339Nano)), nil
 }
+
+var _ PGBoundUnmarshaler = (*DateTime)(nil)
 
 // UnmarshalPGBound implements [PGBoundUnmarshaler].
 // Accepts a PostgreSQL timestamptz literal, including the double-quoted form
@@ -50,17 +58,21 @@ func (t *DateTime) UnmarshalPGBound(text []byte) error {
 	return fmt.Errorf("typx.DateTime.UnmarshalPGBound: cannot parse %q", s)
 }
 
+var _ driver.Valuer = DateTime{}
+
 // Value implements [driver.Valuer].
 // Returns the time with the monotonic clock stripped.
 func (t DateTime) Value() (driver.Value, error) {
 	return t.Time.Round(0), nil
 }
 
+var _ sql.Scanner = (*DateTime)(nil)
+
 // Scan implements [sql.Scanner].
 // The driver is expected to deliver a [time.Time] value (which pgx and database/sql
 // do for DATE, TIMESTAMP, and TIMESTAMPTZ columns alike).
 // A nil value (SQL NULL) zeroes the receiver.
-// Use Nil[DateTime] for a type that can be nil instead of zero.
+// Use [Nil][[DateTime]] for a type that can be nil instead of zero.
 func (t *DateTime) Scan(value any) error {
 	switch v := value.(type) {
 	case nil:
@@ -79,14 +91,14 @@ func (t *DateTime) Scan(value any) error {
 	return nil
 }
 
-// AddDuration adds a Duration with dynamic Month and Day components to the DateTime, returning a new DateTime.
+// AddDuration adds a [Duration] with dynamic Month and Day components to the [DateTime], returning a new [DateTime].
 func (t DateTime) AddDuration(d Duration) DateTime {
 	newTime := t.Time.Add(d.Time)
 	newTime = newTime.AddDate(0, int(d.Month), int(d.Day))
 	return DateTime{newTime.Round(0)}
 }
 
-// SubDateTime returns the Duration d such that t.Equal(other.AddDuration(d)).
+// SubDateTime returns the [Duration] d such that t.Equal(other.AddDuration(d)).
 func (t DateTime) SubDateTime(other DateTime) Duration {
 	yearDiff := t.Year() - other.Year()
 	monthDiff := int(t.Month()) - int(other.Month())

@@ -10,23 +10,27 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Dyn is a dynamic type that can hold any value type.
+// [Dyn] is a dynamic type that can hold any value type.
 // When using with SQL, the column should be a type that can hold JSON data (JSONB, JSON, TEXT, etc).
 type Dyn struct{ Val any }
 
-// MarshalJSON implements the json.Marshaler interface.
+var _ json.Marshaler = Dyn{}
+
+// MarshalJSON implements the [json.Marshaler] interface.
 func (d Dyn) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.Val)
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface.
+var _ json.Unmarshaler = (*Dyn)(nil)
+
+// UnmarshalJSON implements the [json.Unmarshaler] interface.
 func (d *Dyn) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &d.Val)
 }
 
-// Scan implements the sql.Scanner interface.
 var _ sql.Scanner = (*Dyn)(nil)
 
+// Scan implements the [sql.Scanner] interface.
 func (d *Dyn) Scan(src any) error {
 	if src == nil {
 		d.Val = nil
@@ -41,18 +45,24 @@ func (d *Dyn) Scan(src any) error {
 	return fmt.Errorf("typx.Dyn.Scan: %T is not a string or []byte", src)
 }
 
-// Value implements the driver.Valuer interface.
+var _ driver.Valuer = Dyn{}
+
+// Value implements the [driver.Valuer] interface.
 func (d Dyn) Value() (driver.Value, error) {
 	return json.Marshal(d.Val)
 }
 
-// MarshalBSONValue implements the bson.ValueMarshaler interface.
+var _ bson.ValueMarshaler = Dyn{}
+
+// MarshalBSONValue implements the [bson.ValueMarshaler] interface.
 func (d Dyn) MarshalBSONValue() (byte, []byte, error) {
 	t, data, err := bson.MarshalValue(d.Val)
 	return byte(t), data, err
 }
 
-// UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
+var _ bson.ValueUnmarshaler = (*Dyn)(nil)
+
+// UnmarshalBSONValue implements the [bson.ValueUnmarshaler] interface.
 func (d *Dyn) UnmarshalBSONValue(t byte, data []byte) error {
 	if err := bson.UnmarshalValue(bson.Type(t), data, &d.Val); err != nil {
 		return err
@@ -87,12 +97,16 @@ func convertBSONToNative(v any) any {
 	}
 }
 
-// MarshalBSON implements the bson.Marshaler interface for use as a standalone document.
+var _ bson.Marshaler = Dyn{}
+
+// MarshalBSON implements the [bson.Marshaler] interface for use as a standalone document.
 func (d Dyn) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(d.Val)
 }
 
-// UnmarshalBSON implements the bson.Unmarshaler interface for use as a standalone document.
+var _ bson.Unmarshaler = (*Dyn)(nil)
+
+// UnmarshalBSON implements the [bson.Unmarshaler] interface for use as a standalone document.
 func (d *Dyn) UnmarshalBSON(data []byte) error {
 	if err := bson.Unmarshal(data, &d.Val); err != nil {
 		return err
@@ -104,7 +118,9 @@ func (d *Dyn) UnmarshalBSON(data []byte) error {
 // The following implementations are provided for convenience,
 // but they require that the underlying type implements the respective interfaces.
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface.
+var _ encoding.BinaryMarshaler = Dyn{}
+
+// MarshalBinary implements the [encoding.BinaryMarshaler] interface.
 func (d Dyn) MarshalBinary() ([]byte, error) {
 	if marshaler, ok := d.Val.(encoding.BinaryMarshaler); ok {
 		return marshaler.MarshalBinary()
@@ -112,7 +128,9 @@ func (d Dyn) MarshalBinary() ([]byte, error) {
 	return nil, fmt.Errorf("typx.Dyn.MarshalBinary: %T does not implement encoding.BinaryMarshaler", d.Val)
 }
 
-// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+var _ encoding.BinaryUnmarshaler = (*Dyn)(nil)
+
+// UnmarshalBinary implements the [encoding.BinaryUnmarshaler] interface.
 func (d *Dyn) UnmarshalBinary(data []byte) error {
 	if unmarshaler, ok := d.Val.(encoding.BinaryUnmarshaler); ok {
 		return unmarshaler.UnmarshalBinary(data)
@@ -120,7 +138,9 @@ func (d *Dyn) UnmarshalBinary(data []byte) error {
 	return fmt.Errorf("typx.Dyn.UnmarshalBinary: %T does not implement encoding.BinaryUnmarshaler", d.Val)
 }
 
-// MarshalText implements the encoding.TextMarshaler interface.
+var _ encoding.TextMarshaler = Dyn{}
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
 func (d Dyn) MarshalText() ([]byte, error) {
 	if marshaler, ok := d.Val.(encoding.TextMarshaler); ok {
 		return marshaler.MarshalText()
@@ -128,7 +148,9 @@ func (d Dyn) MarshalText() ([]byte, error) {
 	return nil, fmt.Errorf("typx.Dyn.MarshalText: %T does not implement encoding.TextMarshaler", d.Val)
 }
 
-// UnmarshalText implements the encoding.TextUnmarshaler interface.
+var _ encoding.TextUnmarshaler = (*Dyn)(nil)
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (d *Dyn) UnmarshalText(data []byte) error {
 	if unmarshaler, ok := d.Val.(encoding.TextUnmarshaler); ok {
 		return unmarshaler.UnmarshalText(data)
